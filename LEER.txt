@@ -1,0 +1,2 @@
+El trabajo se realizó con una extensión de vscode que le permite a 2 personas trabajar en tiempo real desde la misma sesión
+por ello todos los commits aparecen subidos por la misma persona
