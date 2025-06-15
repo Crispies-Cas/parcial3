@@ -5,10 +5,6 @@ import matplotlib.pyplot as plt
 import cv2
 import nibabel as nib
 from nilearn import plotting, image
-
-class sistema:
-    def __init__(self):
-        self.imagenes_procesadas={}
         
 class Paciente:
     def __init__(self, nombre, edad, ID, imagen):
@@ -16,6 +12,21 @@ class Paciente:
         self.edad = edad
         self.ID = ID
         self.imagen = imagen
+    def __str__(self):
+        return f'el paciente {self.nombre} de {self.edad} e ID:{self.imagen}'
+
+class sistema:
+    def __init__(self):
+        self.imagenes_procesadas={}
+    def nuevo_paciente(ruta):
+        archivos_dcm = sorted(
+        [f for f in os.listdir(carpeta) if f.lower().endswith(".dcm")])
+        if archivos_dcm:
+            pop = os.path.join(carpeta, archivos_dcm[0])
+        ds = pydicom.dcmread(pop)
+        ds.get(0x0010,0x0010)=Paciente(ds.get(0x0010,0x0010), ds.get(0x0010,0x0030),ds.get(0x0010,0x0020), )
+        
+        
 
 def cargar_dicom():
     ruta = input("Suba la ruta de la carpeta con los archivos DICOM: ").strip()
@@ -50,13 +61,11 @@ def cargar_dicom():
 
     eje[2].imshow(volumen[:, :, volumen.shape[2] // 2],cmap='gray',aspect=slice_thickness / pixel_spacing[0])
     eje[2].set_title("Sagital")
-
     plt.tight_layout()
     plt.show()
-
-    clave = input("Ingrese una clave para guardar este volumen: ").strip()
-    nib.save(nifti_img, clave)
-    print("Volumen guardado exitosamente con la clave:", clave) 
+    
+    nib.save(nifti_img)
+    print("Volumen guardado exitosamente")
 
 def mostrar_nii():
     img = input('ruta de la imagen nii: ')
@@ -133,5 +142,89 @@ def procesar_imagen_png_jpg():
     imagenes_procesadas[clave] = binarizada
     print("Imagen procesada y guardada bajo la clave:", clave)
     
+
+def mostrar_imagen_por_clave():
+    clave = input("Ingrese la clave de la imagen que quiere visualizar: ").strip()
+    if clave in imagenes_procesadas:
+        imagen = imagenes_procesadas[clave]
+        plt.imshow(imagen, cmap='gray')
+        plt.title(f"Imagen asociada a la clave: {clave}")
+        plt.axis('off')
+        plt.show()
+    else:
+        print("No se encontro ninguna imagen con esa clave.")
+
+
+imagenes_procesadas={}
+archivos_dicom={}
+
+def trasladar_imagen_dicom():
+    if not archivos_dicom:
+        print("No hay volúmenes cargados.")
+        return
+
+    # Muestra claves disponibles
+    print("Volumenes disponibles:")
+    for clave in archivos_dicom.keys():
+        print("-", clave)
+
+    clave = input("Ingrese la clave del volumen que desea usar: ").strip()
+
+    if clave not in archivos_dicom:
+        print("Clave no encontrada.")
+        return
+
+    volumen = archivos_dicom[clave]
+
+    # Escoge un solo corte (por defecto el del medio)
+    corte = volumen[volumen.shape[0] // 2]
+
+    # Muestra opciones de traslacion
+    print("\nOpciones de traslacion:")
+    opciones = {
+        "1": (20, 0),     # mover 20 pixeles a la derecha
+        "2": (0, 20),     # mover 20 pixeles hacia abajo
+        "3": (-20, 0),    # mover 20 pixeles a la izquierda
+        "4": (0, -20)     # mover 20 pixeles hacia arriba
+    }
+
+    for i, (dx, dy) in enumerate(opciones.values(), 1):
+        print(f"{i}. dx = {dx}, dy = {dy}")
+
+    eleccion = input("Seleccione una opcion de traslacion (1-4): ").strip()
+    if eleccion not in opciones:
+        print("Opción invalida.")
+        return
+
+    dx, dy = opciones[eleccion]
+
+    # Crea la matriz de transformacion
+    M = np.float32([[1, 0, dx], [0, 1, dy]])
+
+    # Aplica la traslacion
+    trasladada = cv2.warpAffine(corte, M, (corte.shape[1], corte.shape[0]))
+
+    # Muestra ambas imagenes
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+    axes[0].imshow(corte, cmap='gray')
+    axes[0].set_title("Imagen Original")
+    axes[0].axis('off')
+
+    axes[1].imshow(trasladada, cmap='gray')
+    axes[1].set_title(f"Trasladada dx={dx}, dy={dy}")
+    axes[1].axis('off')
+
+    plt.tight_layout()
+    plt.show()
+
+    # Guarda imagen trasladada
+    nombre_salida = input("Nombre para guardar la imagen trasladada (ej. trasladada.png): ").strip()
+    if not nombre_salida.lower().endswith('.png'):
+        nombre_salida += ".png"
+
+    cv2.imwrite(nombre_salida, trasladada)
+    print("Imagen trasladada guardada como:", nombre_salida)
+
+
 
 procesar_imagen_png_jpg()
