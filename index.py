@@ -6,6 +6,17 @@ import cv2
 import nibabel as nib
 from nilearn import plotting, image
 
+class sistema:
+    def __init__(self):
+        self.imagenes_procesadas={}
+        
+class Paciente:
+    def __init__(self, nombre, edad, ID, imagen):
+        self.nombre = nombre
+        self.edad = edad
+        self.ID = ID
+        self.imagen = imagen
+
 def cargar_dicom():
     ruta = input("Suba la ruta de la carpeta con los archivos DICOM: ").strip()
 
@@ -123,5 +134,4 @@ def procesar_imagen_png_jpg():
     print("Imagen procesada y guardada bajo la clave:", clave)
     
 
-imagenes_procesadas={}
 procesar_imagen_png_jpg()
