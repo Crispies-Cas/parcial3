@@ -7,9 +7,9 @@ import nibabel as nib
 from nilearn import plotting, image
         
 class Paciente:
-    def __init__(self, nombre, edad, ID, imagen):
+    def __init__(self, nombre, fecha, ID, imagen):
         self.nombre = nombre
-        self.edad = edad
+        self.fecha = fecha
         self.ID = ID
         self.imagen = imagen
     def __str__(self):
@@ -17,14 +17,18 @@ class Paciente:
 
 class sistema:
     def __init__(self):
+        self.pacientes=[]
         self.imagenes_procesadas={}
-    def nuevo_paciente(ruta):
-        archivos_dcm = sorted(
-        [f for f in os.listdir(carpeta) if f.lower().endswith(".dcm")])
+    def nuevo_paciente(self, ruta):
+        archivos_dcm = sorted([f for f in os.listdir(ruta) if f.lower().endswith(".dcm")])
         if archivos_dcm:
-            pop = os.path.join(carpeta, archivos_dcm[0])
+            pop = os.path.join(ruta, archivos_dcm[0])
         ds = pydicom.dcmread(pop)
-        ds.get(0x0010,0x0010)=Paciente(ds.get(0x0010,0x0010), ds.get(0x0010,0x0030),ds.get(0x0010,0x0020), )
+        nombre= ds.get(0x0010,0x0010)
+        fecha=ds.get(0x0010,0x0030)
+        ID= ds.get(0x0010,0x0020)
+        nombre=Paciente(nombre, fecha, ID, self.imagenes_procesadas[-1])
+        self.pacientes.append
         
         
 
@@ -63,14 +67,18 @@ def cargar_dicom():
     eje[2].set_title("Sagital")
     plt.tight_layout()
     plt.show()
-    
-    nib.save(nifti_img)
-    print("Volumen guardado exitosamente")
+    # Obtener el espaciado
+    z = float(slices[0].SliceThickness)
+    y, x = map(float, slices[0].PixelSpacing)
 
-def mostrar_nii():
-    img = input('ruta de la imagen nii: ')
-    plotting.plot_anat(img, display_mode='ortho', title='Planos Axial, Sagital y Coronal')
-    plt.show()
+    # Crear matriz affine con spacing real
+    affine = np.diag([z, y, x, 1])
+
+    # Crear imagen NIfTI
+    nifti_img = nib.Nifti1Image(volumen, affine)
+
+    nib.save(nifti_img, 'img'+len(sistema.imagenes_procesadas))
+    print(f"✔ Volumen guardado como archivo NIfTI: {'img'+len(sistema.imagenes_procesadas)}
 
 
 def procesar_imagen_png_jpg():
@@ -227,4 +235,4 @@ def trasladar_imagen_dicom():
 
 
 
-procesar_imagen_png_jpg()
+trasladar_imagen_dicom()
