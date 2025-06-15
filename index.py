@@ -83,3 +83,36 @@ def procesar_imagen_png_jpg():
     binarizada = cv2.morphologyEx(binarizada, cv2.MORPH_CLOSE, kernel)
     
     
+    
+# Obtener las dimensiones de la imagen binarizada, 
+h, w = binarizada.shape   
+
+forma = input("Que figura desea dibujar? (cuadro/circulo): ").strip().lower()
+
+if forma == "cuadro":
+    # Dibuja un rectangulo desde (10, 10) hasta (w-10, h-10)
+    cv2.rectangle(binarizada, (10, 10), (w - 10, h - 10), (255), 2)
+
+    # Escribe "Imagen binarizada" cerca de la esquina superior izquierda
+    cv2.putText(binarizada, "Imagen binarizada", (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, 255, 2)
+
+elif forma == "circulo":
+    # El radio se elige para que no se salga de la imagen (aprox 1/3 del lado mas corto)
+    radio = min(w, h) // 3
+    cv2.circle(binarizada, (w // 2, h // 2), radio, 255, 2)
+
+    # Escribe "Imagen binarizada" cerca de la esquina superior izquierda
+    cv2.putText(binarizada, "Imagen binarizada", (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, 255, 2)
+    
+# Mostrar y guardar
+    plt.imshow(binarizada, cmap='gray')
+    plt.title("Imagen Procesada")
+    plt.axis("off")
+    plt.show()
+
+    clave = input("Ingrese una clave para guardar esta imagen procesada: ").strip()
+    imagenes_procesadas[clave] = binarizada
+    print("Imagen procesada y guardada bajo la clave:", clave)h = altura, w = ancho
+    
+
+procesar_imagen_png_jpg()
