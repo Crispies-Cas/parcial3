@@ -3,8 +3,8 @@ import numpy as np
 import pydicom
 import matplotlib.pyplot as plt
 import cv2
-
-archivos_dicom = {}  # Diccionario global para guardar volumenes 
+import nibabel as nib
+from nilearn import plotting, image
 
 def cargar_dicom():
     ruta = input("Suba la ruta de la carpeta con los archivos DICOM: ").strip()
@@ -28,6 +28,8 @@ def cargar_dicom():
 
     fig, eje = plt.subplots(1, 3, figsize=(15, 5))
     
+    affine = np.diag([slice_thickness, pixel_spacing[0], pixel_spacing[1], 1.0])
+    nifti_img = nib.Nifti1Image(volumen, affine)
 
     eje[0].imshow(volumen[volumen.shape[0] // 2, :, :],cmap='gray',aspect=pixel_spacing[0] / pixel_spacing[1])
     eje[0].set_title("Axial")
@@ -42,8 +44,13 @@ def cargar_dicom():
     plt.show()
 
     clave = input("Ingrese una clave para guardar este volumen: ").strip()
-    archivos_dicom[clave] = volumen
+    nib.save(nifti_img, clave)
     print("Volumen guardado exitosamente con la clave:", clave) 
+
+def mostrar_nii():
+    img = input('ruta de la imagen nii: ')
+    plotting.plot_anat(img, display_mode='ortho', title='Planos Axial, Sagital y Coronal')
+    plt.show()
 
 
 def procesar_imagen_png_jpg():
@@ -74,36 +81,37 @@ def procesar_imagen_png_jpg():
         5: cv2.THRESH_TOZERO_INV
     }
     
-    binarizada = cv2.threshold(imagen, umbral, 255, tipos.get(opcion, cv2.THRESH_BINARY))
+    _, binarizada = cv2.threshold(imagen, umbral, 255, tipos.get(opcion, cv2.THRESH_BINARY))
 
 
-# Transformacion morfologica
+    # Transformacion morfologica
     tamaño_kernel = int(input("Ingrese el tamaño del kernel para la transformacion (e.g. 3): ").strip())
     kernel = np.ones((tamaño_kernel, tamaño_kernel), np.uint8)
     binarizada = cv2.morphologyEx(binarizada, cv2.MORPH_CLOSE, kernel)
-    
-    
-    
-# Obtener las dimensiones de la imagen binarizada, 
-h, w = binarizada.shape   
+        
+        
+        
+    # Obtener las dimensiones de la imagen binarizada, #h = altura, w = ancho
+    h, w = binarizada.shape       
 
-forma = input("Que figura desea dibujar? (cuadro/circulo): ").strip().lower()
+    forma = input("Que figura desea dibujar? (cuadro/circulo): ").strip().lower()
 
-if forma == "cuadro":
-    # Dibuja un rectangulo desde (10, 10) hasta (w-10, h-10)
-    cv2.rectangle(binarizada, (10, 10), (w - 10, h - 10), (255), 2)
+    if forma == "cuadro":
+        # Dibuja un rectangulo desde (10, 10) hasta (w-10, h-10)
+        cv2.rectangle(binarizada, (10, 10), (w - 10, h - 10), (255), 2)
 
-    # Escribe "Imagen binarizada" cerca de la esquina superior izquierda
-    cv2.putText(binarizada, "Imagen binarizada", (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, 255, 2)
+        # Escribe "Imagen binarizada" cerca de la esquina superior izquierda
+        cv2.putText(binarizada, "Imagen binarizada", (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, 255, 2)
 
-elif forma == "circulo":
-    # El radio se elige para que no se salga de la imagen (aprox 1/3 del lado mas corto)
-    radio = min(w, h) // 3
-    cv2.circle(binarizada, (w // 2, h // 2), radio, 255, 2)
+    elif forma == "circulo":
+        # El radio se elige para que no se salga de la imagen (aprox 1/3 del lado mas corto)
+        radio = min(w, h) // 3
+        cv2.circle(binarizada, (w // 2, h // 2), radio, 255, 2)
 
-    # Escribe "Imagen binarizada" cerca de la esquina superior izquierda
-    cv2.putText(binarizada, "Imagen binarizada", (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, 255, 2)
-    
+        # Escribe "Imagen binarizada" cerca de la esquina superior izquierda
+        cv2.putText(binarizada, "Imagen binarizada", (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, 255, 2)
+        
+
 # Mostrar y guardar
     plt.imshow(binarizada, cmap='gray')
     plt.title("Imagen Procesada")
@@ -112,7 +120,8 @@ elif forma == "circulo":
 
     clave = input("Ingrese una clave para guardar esta imagen procesada: ").strip()
     imagenes_procesadas[clave] = binarizada
-    print("Imagen procesada y guardada bajo la clave:", clave)h = altura, w = ancho
+    print("Imagen procesada y guardada bajo la clave:", clave)
     
 
+imagenes_procesadas={}
 procesar_imagen_png_jpg()
